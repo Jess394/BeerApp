@@ -18,7 +18,7 @@ class AudioManager: ObservableObject {
     private var resetPlayer: AVAudioPlayer?
     
     @Published var isAudioEnabled = true
-    @Published var volume: Float = BeerConfiguration.Audio.defaultVolume
+    @Published var volume: Float = TeaConfiguration.Audio.defaultVolume
     
     // MARK: - Configuration
     private let audioSession = AVAudioSession.sharedInstance()
@@ -38,9 +38,9 @@ class AudioManager: ObservableObject {
     func setupAudioSession() {
         do {
             try audioSession.setCategory(
-                BeerConfiguration.Audio.sessionCategory,
-                mode: BeerConfiguration.Audio.sessionMode,
-                options: BeerConfiguration.Audio.sessionOptions
+                TeaConfiguration.Audio.sessionCategory,
+                mode: TeaConfiguration.Audio.sessionMode,
+                options: TeaConfiguration.Audio.sessionOptions
             )
             try audioSession.setActive(true)
         } catch {
@@ -57,13 +57,13 @@ class AudioManager: ObservableObject {
     /// Play drinking sound effect
     func playDrinkSound() {
         guard isAudioEnabled else { return }
-        playSound(player: &drinkPlayer, volume: volume * BeerConfiguration.Audio.drinkVolumeMultiplier)
+        playSound(player: &drinkPlayer, volume: volume * TeaConfiguration.Audio.drinkVolumeMultiplier)
     }
     
     /// Play bubble sound effect
     func playBubbleSound() {
         guard isAudioEnabled else { return }
-        playSound(player: &bubblePlayer, volume: volume * BeerConfiguration.Audio.bubbleVolumeMultiplier)
+        playSound(player: &bubblePlayer, volume: volume * TeaConfiguration.Audio.bubbleVolumeMultiplier)
     }
     
     /// Play reset/refill sound effect

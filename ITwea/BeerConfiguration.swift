@@ -1,15 +1,16 @@
 //
 //  BeerConfiguration.swift
-//  ITwea - Beer Drinking Simulation
+//  ITwea - Twisted Tea Simulation
 //
 //  Created by Jess Cadena on 6/19/25.
 //
 
 import SwiftUI
 import SpriteKit
+import AVFoundation
 
-/// Centralized configuration for beer simulation parameters
-struct BeerConfiguration {
+/// Centralized configuration for Twisted Tea simulation parameters
+struct TeaConfiguration {
     
     // MARK: - Physics Configuration
     struct Physics {
@@ -43,20 +44,20 @@ struct BeerConfiguration {
     
     // MARK: - Visual Configuration
     struct Visual {
-        /// Beer liquid color
-        static let beerColor = SKColor(red: 1.0, green: 0.8, blue: 0.2, alpha: 0.8)
+        /// Tea liquid color
+        static let teaColor = SKColor(red: 0.8, green: 0.6, blue: 0.3, alpha: 0.9)
         
-        /// Beer foam color
-        static let foamColor = SKColor(red: 1.0, green: 1.0, blue: 0.9, alpha: 0.9)
+        /// Tea foam color
+        static let foamColor = SKColor(red: 0.9, green: 0.8, blue: 0.6, alpha: 0.8)
         
         /// Bubble color
-        static let bubbleColor = SKColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.6)
+        static let bubbleColor = SKColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.4)
         
         /// Glass border color
-        static let glassBorderColor = SKColor.white.withAlphaComponent(0.3)
+        static let glassBorderColor = SKColor.white.withAlphaComponent(0.2)
         
         /// Glass border width
-        static let glassBorderWidth: CGFloat = 2
+        static let glassBorderWidth: CGFloat = 1
         
         /// Liquid border width
         static let liquidBorderWidth: CGFloat = 1
@@ -70,20 +71,20 @@ struct BeerConfiguration {
     
     // MARK: - Glass Configuration
     struct Glass {
-        /// Glass width
-        static let width: CGFloat = 120
+        /// Glass width (proportional to screen)
+        static let width: CGFloat = 300
         
-        /// Glass height
+        /// Glass height (proportional to screen)
         static let height: CGFloat = 200
         
         /// Corner radius for rounded glass
-        static let cornerRadius: CGFloat = 20
+        static let cornerRadius: CGFloat = 25
         
         /// Liquid width (slightly smaller than glass)
-        static let liquidWidth: CGFloat = 100
+        static let liquidWidth: CGFloat = 180
         
         /// Liquid height multiplier
-        static let liquidHeightMultiplier: CGFloat = 180
+        static let liquidHeightMultiplier: CGFloat = 280
         
         /// Foam height
         static let foamHeight: CGFloat = 20
@@ -95,28 +96,28 @@ struct BeerConfiguration {
     // MARK: - Animation Configuration
     struct Animation {
         /// Bubble creation interval (seconds)
-        static let bubbleInterval: TimeInterval = 0.5
+        static let bubbleInterval: TimeInterval = 0.8
         
         /// Bubble rise duration (seconds)
-        static let bubbleRiseDuration: TimeInterval = 3.0
+        static let bubbleRiseDuration: TimeInterval = 4.0
         
         /// Bubble fade duration (seconds)
-        static let bubbleFadeDuration: TimeInterval = 2.0
+        static let bubbleFadeDuration: TimeInterval = 2.5
         
         /// Minimum bubble radius
-        static let minBubbleRadius: CGFloat = 2
+        static let minBubbleRadius: CGFloat = 3
         
         /// Maximum bubble radius
-        static let maxBubbleRadius: CGFloat = 6
+        static let maxBubbleRadius: CGFloat = 8
         
         /// Bubble spawn area width
-        static let bubbleSpawnWidth: CGFloat = 100
+        static let bubbleSpawnWidth: CGFloat = 120
         
         /// Bubble spawn Y position
-        static let bubbleSpawnY: CGFloat = -90
+        static let bubbleSpawnY: CGFloat = -140
         
         /// Bubble rise distance
-        static let bubbleRiseDistance: CGFloat = 200
+        static let bubbleRiseDistance: CGFloat = 280
         
         /// Scene update frequency (FPS)
         static let updateFrequency: Double = 30.0
@@ -159,8 +160,8 @@ struct BeerConfiguration {
     struct UI {
         /// Background gradient colors
         static let backgroundColors: [Color] = [
-            Color.black.opacity(0.8),
-            Color.gray.opacity(0.6)
+            Color.black.opacity(0.95),
+            Color.gray.opacity(0.8)
         ]
         
         /// Glass container background material
@@ -170,62 +171,74 @@ struct BeerConfiguration {
         static let instructionsBackgroundMaterial: Material = .ultraThinMaterial
         
         /// Button corner radius
-        static let buttonCornerRadius: CGFloat = 10
+        static let buttonCornerRadius: CGFloat = 15
         
         /// Glass container corner radius
-        static let glassContainerCornerRadius: CGFloat = 20
+        static let glassContainerCornerRadius: CGFloat = 40
         
         /// SpriteKit scene corner radius
-        static let sceneCornerRadius: CGFloat = 15
+        static let sceneCornerRadius: CGFloat = 35
+        
+        /// Bottom bar height
+        static let bottomBarHeight: CGFloat = 120
+        
+        /// Bottom bar background
+        static let bottomBarBackground: Material = .ultraThinMaterial
     }
 }
 
-// MARK: - Beer Types Configuration
-extension BeerConfiguration {
-    /// Predefined beer types with different visual properties
-    enum BeerType: String, CaseIterable {
-        case lager = "Lager"
-        case ale = "Ale"
-        case stout = "Stout"
-        case wheat = "Wheat"
-        case ipa = "IPA"
+// MARK: - Tea Types Configuration
+extension TeaConfiguration {
+    /// Predefined tea types with different visual properties
+    enum TeaType: String, CaseIterable {
+        case original = "Original"
+        case peach = "Peach"
+        case raspberry = "Raspberry"
+        case mango = "Mango"
+        case strawberry = "Strawberry"
         
         var color: SKColor {
             switch self {
-            case .lager:
-                return SKColor(red: 1.0, green: 0.8, blue: 0.2, alpha: 0.8)
-            case .ale:
-                return SKColor(red: 0.8, green: 0.6, blue: 0.1, alpha: 0.8)
-            case .stout:
-                return SKColor(red: 0.2, green: 0.1, blue: 0.05, alpha: 0.9)
-            case .wheat:
-                return SKColor(red: 1.0, green: 0.9, blue: 0.3, alpha: 0.8)
-            case .ipa:
-                return SKColor(red: 0.9, green: 0.7, blue: 0.1, alpha: 0.8)
+            case .original:
+                return SKColor(red: 0.8, green: 0.6, blue: 0.3, alpha: 0.9)
+            case .peach:
+                return SKColor(red: 0.9, green: 0.7, blue: 0.5, alpha: 0.9)
+            case .raspberry:
+                return SKColor(red: 0.8, green: 0.4, blue: 0.6, alpha: 0.9)
+            case .mango:
+                return SKColor(red: 1.0, green: 0.8, blue: 0.4, alpha: 0.9)
+            case .strawberry:
+                return SKColor(red: 0.9, green: 0.5, blue: 0.5, alpha: 0.9)
             }
         }
         
         var foamColor: SKColor {
             switch self {
-            case .lager, .ale, .wheat, .ipa:
-                return SKColor(red: 1.0, green: 1.0, blue: 0.9, alpha: 0.9)
-            case .stout:
-                return SKColor(red: 0.8, green: 0.7, blue: 0.6, alpha: 0.9)
+            case .original:
+                return SKColor(red: 0.9, green: 0.8, blue: 0.6, alpha: 0.8)
+            case .peach:
+                return SKColor(red: 1.0, green: 0.9, blue: 0.7, alpha: 0.8)
+            case .raspberry:
+                return SKColor(red: 0.9, green: 0.7, blue: 0.8, alpha: 0.8)
+            case .mango:
+                return SKColor(red: 1.0, green: 0.9, blue: 0.7, alpha: 0.8)
+            case .strawberry:
+                return SKColor(red: 1.0, green: 0.8, blue: 0.8, alpha: 0.8)
             }
         }
         
         var bubbleIntensity: Double {
             switch self {
-            case .lager:
-                return 1.0
-            case .ale:
+            case .original:
                 return 0.8
-            case .stout:
-                return 0.3
-            case .wheat:
-                return 1.2
-            case .ipa:
+            case .peach:
+                return 1.0
+            case .raspberry:
                 return 0.9
+            case .mango:
+                return 1.1
+            case .strawberry:
+                return 0.7
             }
         }
     }
@@ -236,13 +249,13 @@ extension BeerConfiguration {
  CUSTOMIZATION INSTRUCTIONS:
  
  1. PHYSICS ADJUSTMENTS:
-    - Increase liquidDensity for thicker beer
+    - Increase liquidDensity for thicker tea
     - Decrease damping for more fluid movement
     - Adjust gravityScale for different gravity effects
     - Modify tiltSensitivity for device responsiveness
  
  2. VISUAL CUSTOMIZATION:
-    - Change beerColor for different beer types
+    - Change teaColor for different tea types
     - Adjust transparency with alpha values
     - Modify glass dimensions in Glass struct
     - Customize bubble appearance and behavior
@@ -257,13 +270,23 @@ extension BeerConfiguration {
     - Modify audio session settings for background playback
     - Customize sound effect timing and intensity
  
- 5. BEER TYPES:
-    - Use predefined BeerType enum for different styles
+ 5. TEA TYPES:
+    - Use predefined TeaType enum for different styles
     - Each type has optimized colors and bubble behavior
-    - Easy to add new beer types by extending the enum
+    - Easy to add new tea types by extending the enum
  
  6. PERFORMANCE OPTIMIZATION:
     - Reduce updateFrequency on older devices
     - Decrease bubbleInterval for fewer particles
     - Adjust physics complexity based on device capabilities
  */ 
+
+#Preview("Tea Simulation") {
+    ContentView()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Light Mode") {
+    ContentView()
+        .preferredColorScheme(.light)
+} 

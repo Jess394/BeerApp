@@ -1,29 +1,31 @@
 //
 //  ITweaApp.swift
-//  ITwea - Beer Drinking Simulation
+//  ITwea - Twisted Tea Simulation
 //
 //  Created by Jess Cadena on 6/19/25.
 //
 
 import SwiftUI
-import CoreMotion
 
 @main
 struct ITweaApp: App {
-    // MARK: - Properties
-    @StateObject private var motionManager = MotionManager()
-    @StateObject private var audioManager = AudioManager()
+    init() {
+        #if DEBUG
+        // Simple InjectionIII setup for App Store version
+        if let injectionPath = "/Applications/InjectionIII.app/Contents/Resources/iOSInjection.bundle",
+           let bundle = Bundle(path: injectionPath) {
+            bundle.load()
+            print("✅ InjectionIII loaded successfully!")
+        } else {
+            print("❌ InjectionIII not found. Make sure the app is installed and running.")
+        }
+        #endif
+    }
     
     var body: some Scene {
         WindowGroup {
-            BeerDrinkingView()
-                .environmentObject(motionManager)
-                .environmentObject(audioManager)
-                .onAppear {
-                    // Request motion permissions and start monitoring
-                    motionManager.requestMotionPermissions()
-                    audioManager.setupAudioSession()
-                }
+            ContentView()
+                .preferredColorScheme(.dark)
         }
     }
 }

@@ -1,291 +1,330 @@
 //
 //  ContentView.swift
-//  ITwea - Beer Drinking Simulation
+//  ITwea - Twisted Tea Simulation
 //
 //  Created by Jess Cadena on 6/19/25.
 //
 
 import SwiftUI
 import SpriteKit
-import CoreMotion
 
-struct BeerDrinkingView: View {
-    // MARK: - Environment Objects
-    @EnvironmentObject var motionManager: MotionManager
-    @EnvironmentObject var audioManager: AudioManager
+/// Main view for Twisted Tea simulation with modern UI and full-screen experience
+struct ContentView: View {
     
-    // MARK: - State
-    @State private var beerLevel: Double = 1.0 // 0.0 = empty, 1.0 = full
+    // MARK: - State Properties
+    @State private var selectedTeaType: TeaConfiguration.TeaType = .original
     @State private var isPouring = false
+    @State private var isRefilling = false
     @State private var showInstructions = true
-    @State private var selectedBeerType: BeerConfiguration.BeerType = .lager
-    @State private var showBeerTypePicker = false
     
-    // MARK: - Computed Properties
-    private var scene: SKScene {
-        let scene = BeerScene()
-        scene.scaleMode = .aspectFill
-        scene.backgroundColor = .clear
+    // MARK: - Scene Properties
+    private var teaScene: TeaScene {
+        let scene = TeaScene()
+        
+        // Calculate available space for the scene - no padding except bottom
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+        let availableHeight = screenHeight - TeaConfiguration.UI.bottomBarHeight
+        
+        // Set scene size to use full width and available height
+        scene.size = CGSize(width: screenWidth, height: availableHeight)
+        scene.scaleMode = .aspectFit
+        
+        print("ContentView: Scene size set to \(scene.size)")
         return scene
     }
     
+    // MARK: - Body
     var body: some View {
         ZStack {
             // Background gradient
             LinearGradient(
-                colors: BeerConfiguration.UI.backgroundColors,
+                colors: TeaConfiguration.UI.backgroundColors,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
             
-            VStack(spacing: 20) {
-                // Title
-                Text("🍺 Beer Simulator")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .padding(.top)
+            VStack(spacing: 0) {
+                // Main tea simulation area
+                teaSimulationArea
                 
-                // Beer type selector
-                HStack {
-                    Text("Beer Type:")
-                        .foregroundColor(.white)
-                        .font(.headline)
-                    
-                    Button(selectedBeerType.rawValue) {
-                        showBeerTypePicker = true
-                    }
-                    .foregroundColor(.yellow)
-                    .font(.headline)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(BeerConfiguration.UI.buttonCornerRadius)
-                }
-                
-                // Beer glass with SpriteKit scene
-                ZStack {
-                    // Glass container
-                    RoundedRectangle(cornerRadius: BeerConfiguration.UI.glassContainerCornerRadius)
-                        .fill(.clear)
-                        .stroke(Color.white.opacity(0.3), lineWidth: 3)
-                        .frame(width: 200, height: 300)
-                        .background(
-                            RoundedRectangle(cornerRadius: BeerConfiguration.UI.glassContainerCornerRadius)
-                                .fill(.clear)
-                                .background(BeerConfiguration.UI.glassBackgroundMaterial)
-                        )
-                    
-                    // SpriteKit scene for beer simulation
-                    SpriteView(scene: scene)
-                        .frame(width: 180, height: 280)
-                        .clipShape(RoundedRectangle(cornerRadius: BeerConfiguration.UI.sceneCornerRadius))
-                }
-                .frame(width: 220, height: 320)
-                
-                // Controls
-                VStack(spacing: 15) {
-                    // Beer level slider
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("Beer Level: \(Int(beerLevel * 100))%")
-                            .foregroundColor(.white)
-                            .font(.headline)
-                        
-                        Slider(value: $beerLevel, in: 0.0...1.0)
-                            .accentColor(.yellow)
-                            .onChange(of: beerLevel) { newValue in
-                                // Update beer level in SpriteKit scene
-                                NotificationCenter.default.post(
-                                    name: .updateBeerLevel,
-                                    object: newValue
-                                )
-                            }
-                    }
-                    .padding(.horizontal)
-                    
-                    // Pour button
-                    Button(action: {
-                        isPouring.toggle()
-                        if isPouring {
-                            audioManager.playPourSound()
-                            beerLevel = min(beerLevel + 0.2, 1.0)
-                        }
-                    }) {
-                        HStack {
-                            Image(systemName: isPouring ? "stop.fill" : "drop.fill")
-                            Text(isPouring ? "Stop Pouring" : "Pour Beer")
-                        }
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(isPouring ? Color.red : Color.blue)
-                        .cornerRadius(BeerConfiguration.UI.buttonCornerRadius)
-                    }
-                    
-                    // Reset button
-                    Button(action: {
-                        beerLevel = 1.0
-                        audioManager.playResetSound()
-                    }) {
-                        HStack {
-                            Image(systemName: "arrow.clockwise")
-                            Text("Refill Glass")
-                        }
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(Color.green)
-                        .cornerRadius(BeerConfiguration.UI.buttonCornerRadius)
-                    }
-                    
-                    // Audio toggle
-                    Button(action: {
-                        audioManager.toggleAudio()
-                    }) {
-                        HStack {
-                            Image(systemName: audioManager.isAudioEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                            Text(audioManager.isAudioEnabled ? "Audio On" : "Audio Off")
-                        }
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(audioManager.isAudioEnabled ? Color.blue : Color.gray)
-                        .cornerRadius(BeerConfiguration.UI.buttonCornerRadius)
-                    }
-                }
-                
-                Spacer()
+                // Bottom control bar
+                bottomControlBar
             }
             
             // Instructions overlay
             if showInstructions {
-                InstructionsOverlay(isShowing: $showInstructions)
+                instructionsOverlay
             }
         }
-        .onReceive(motionManager.$deviceMotion) { motion in
-            guard let motion = motion else { return }
-            
-            // Send motion data to SpriteKit scene
-            NotificationCenter.default.post(
-                name: .updateDeviceMotion,
-                object: motion
-            )
+        .onAppear {
+            setupNotificationObservers()
         }
-        .onChange(of: selectedBeerType) { newBeerType in
-            // Update beer type in SpriteKit scene
-            NotificationCenter.default.post(
-                name: .updateBeerType,
-                object: newBeerType
-            )
-        }
-        .sheet(isPresented: $showBeerTypePicker) {
-            BeerTypePickerView(selectedBeerType: $selectedBeerType)
+        .onDisappear {
+            removeNotificationObservers()
         }
     }
-}
-
-// MARK: - Beer Type Picker View
-struct BeerTypePickerView: View {
-    @Binding var selectedBeerType: BeerConfiguration.BeerType
-    @Environment(\.dismiss) private var dismiss
     
-    var body: some View {
-        NavigationView {
-            List(BeerConfiguration.BeerType.allCases, id: \.self) { beerType in
+    // MARK: - Tea Simulation Area
+    private var teaSimulationArea: some View {
+        ZStack {
+            // Glass container with blur effect - no padding except bottom
+            RoundedRectangle(cornerRadius: TeaConfiguration.UI.glassContainerCornerRadius)
+                .fill(.clear)
+                .background(TeaConfiguration.UI.glassBackgroundMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: TeaConfiguration.UI.glassContainerCornerRadius)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+                .padding(.bottom, 20) // Only bottom padding
+            
+            // SpriteKit scene - no padding except bottom
+            SpriteView(scene: teaScene)
+                .clipShape(RoundedRectangle(cornerRadius: TeaConfiguration.UI.sceneCornerRadius))
+                .padding(.bottom, 25) // Only bottom padding
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    // MARK: - Bottom Control Bar
+    private var bottomControlBar: some View {
+        VStack(spacing: 0) {
+            // Divider
+            Rectangle()
+                .fill(Color.white.opacity(0.2))
+                .frame(height: 1)
+            
+            // Control bar content
+            HStack(spacing: 20) {
+                // Tea type selector
+                teaTypeSelector
+                
+                Spacer()
+                
+                // Action buttons
+                HStack(spacing: 15) {
+                    pourButton
+                    refillButton
+                }
+            }
+            .padding(.horizontal, 25)
+            .padding(.vertical, 20)
+            .background(TeaConfiguration.UI.bottomBarBackground)
+        }
+        .frame(height: TeaConfiguration.UI.bottomBarHeight)
+    }
+    
+    // MARK: - Tea Type Selector
+    private var teaTypeSelector: some View {
+        Menu {
+            ForEach(TeaConfiguration.TeaType.allCases, id: \.self) { teaType in
                 Button(action: {
-                    selectedBeerType = beerType
-                    dismiss()
+                    selectedTeaType = teaType
+                    changeTeaType(teaType)
                 }) {
                     HStack {
-                        Circle()
-                            .fill(Color(beerType.color))
-                            .frame(width: 20, height: 20)
-                        
-                        Text(beerType.rawValue)
-                            .foregroundColor(.primary)
-                        
-                        Spacer()
-                        
-                        if selectedBeerType == beerType {
+                        Text(teaType.rawValue)
+                        if selectedTeaType == teaType {
                             Image(systemName: "checkmark")
-                                .foregroundColor(.blue)
                         }
                     }
                 }
             }
-            .navigationTitle("Select Beer Type")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "cup.and.saucer.fill")
+                    .foregroundColor(.white)
+                Text(selectedTeaType.rawValue)
+                    .foregroundColor(.white)
+                    .font(.system(size: 16, weight: .medium))
+                Image(systemName: "chevron.down")
+                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 12))
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color.white.opacity(0.1))
+            .cornerRadius(TeaConfiguration.UI.buttonCornerRadius)
         }
     }
-}
-
-// MARK: - Instructions Overlay
-struct InstructionsOverlay: View {
-    @Binding var isShowing: Bool
     
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.8)
-                .ignoresSafeArea()
+    // MARK: - Action Buttons
+    private var pourButton: some View {
+        Button(action: {
+            pourTea()
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: "drop.fill")
+                    .foregroundColor(.white)
+                Text("Pour")
+                    .foregroundColor(.white)
+                    .font(.system(size: 16, weight: .medium))
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(
+                LinearGradient(
+                    colors: [Color.blue.opacity(0.8), Color.blue.opacity(0.6)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .cornerRadius(TeaConfiguration.UI.buttonCornerRadius)
+            .scaleEffect(isPouring ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: isPouring)
+        }
+        .disabled(isPouring)
+    }
+    
+    private var refillButton: some View {
+        Button(action: {
+            refillTea()
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: "arrow.clockwise")
+                    .foregroundColor(.white)
+                Text("Refill")
+                    .foregroundColor(.white)
+                    .font(.system(size: 16, weight: .medium))
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(
+                LinearGradient(
+                    colors: [Color.green.opacity(0.8), Color.green.opacity(0.6)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .cornerRadius(TeaConfiguration.UI.buttonCornerRadius)
+            .scaleEffect(isRefilling ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: isRefilling)
+        }
+        .disabled(isRefilling)
+    }
+    
+    // MARK: - Instructions Overlay
+    private var instructionsOverlay: some View {
+        VStack(spacing: 20) {
+            Spacer()
             
-            VStack(spacing: 20) {
-                Text("🍺 How to Use")
-                    .font(.title)
+            VStack(spacing: 16) {
+                Image(systemName: "hand.raised.fill")
+                    .font(.system(size: 40))
+                    .foregroundColor(.white)
+                
+                Text("Tilt Your Phone")
+                    .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
                 
-                VStack(alignment: .leading, spacing: 15) {
-                    InstructionRow(icon: "iphone", text: "Tilt your device to see the beer slosh")
-                    InstructionRow(icon: "drop.fill", text: "Use the slider to adjust beer level")
-                    InstructionRow(icon: "speaker.wave.2", text: "Pour button adds beer with sound effects")
-                    InstructionRow(icon: "arrow.clockwise", text: "Refill button resets to full glass")
-                    InstructionRow(icon: "paintbrush", text: "Select different beer types for variety")
-                }
-                .padding()
-                .background(BeerConfiguration.UI.instructionsBackgroundMaterial)
-                .cornerRadius(15)
-                
-                Button("Got it!") {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        isShowing = false
-                    }
-                }
-                .foregroundColor(.white)
-                .padding()
-                .background(Color.blue)
-                .cornerRadius(BeerConfiguration.UI.buttonCornerRadius)
+                Text("Hold your phone like a glass and tilt it to drink the tea!")
+                    .font(.body)
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
             }
-            .padding()
-        }
-        .transition(.opacity)
-    }
-}
-
-struct InstructionRow: View {
-    let icon: String
-    let text: String
-    
-    var body: some View {
-        HStack(spacing: 15) {
-            Image(systemName: icon)
-                .foregroundColor(.yellow)
-                .frame(width: 20)
+            .padding(.vertical, 30)
+            .padding(.horizontal, 20)
+            .background(TeaConfiguration.UI.instructionsBackgroundMaterial)
+            .cornerRadius(20)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+            .padding(.horizontal, 40)
             
-            Text(text)
-                .foregroundColor(.white)
+            Button("Got it!") {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showInstructions = false
+                }
+            }
+            .foregroundColor(.white)
+            .font(.system(size: 16, weight: .medium))
+            .padding(.horizontal, 30)
+            .padding(.vertical, 12)
+            .background(Color.white.opacity(0.2))
+            .cornerRadius(TeaConfiguration.UI.buttonCornerRadius)
             
             Spacer()
         }
+        .transition(.opacity)
+    }
+    
+    // MARK: - Actions
+    private func pourTea() {
+        isPouring = true
+        
+        // Send notification to scene
+        NotificationCenter.default.post(name: .pourTea, object: nil)
+        
+        // Reset button state after animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            isPouring = false
+        }
+    }
+    
+    private func refillTea() {
+        isRefilling = true
+        
+        // Send notification to scene
+        NotificationCenter.default.post(name: .refillTea, object: nil)
+        
+        // Reset button state after animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            isRefilling = false
+        }
+    }
+    
+    private func changeTeaType(_ teaType: TeaConfiguration.TeaType) {
+        // Send notification to scene
+        NotificationCenter.default.post(name: .changeTeaType, object: teaType)
+    }
+    
+    // MARK: - Notification Setup
+    private func setupNotificationObservers() {
+        NotificationCenter.default.addObserver(
+            forName: .pourTea,
+            object: nil,
+            queue: .main
+        ) { _ in
+            // Handle pour notification if needed
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: .refillTea,
+            object: nil,
+            queue: .main
+        ) { _ in
+            // Handle refill notification if needed
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: .changeTeaType,
+            object: nil,
+            queue: .main
+        ) { notification in
+            if let teaType = notification.object as? TeaConfiguration.TeaType {
+                selectedTeaType = teaType
+            }
+        }
+    }
+    
+    private func removeNotificationObservers() {
+        NotificationCenter.default.removeObserver(self)
     }
 }
 
+// MARK: - Notification Names
+extension Notification.Name {
+    static let pourTea = Notification.Name("pourTea")
+    static let refillTea = Notification.Name("refillTea")
+    static let changeTeaType = Notification.Name("changeTeaType")
+}
+
+// MARK: - Preview
 #Preview {
-    BeerDrinkingView()
-        .environmentObject(MotionManager())
-        .environmentObject(AudioManager())
+    ContentView()
+        .preferredColorScheme(.dark)
 }

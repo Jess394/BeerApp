@@ -50,8 +50,8 @@ class MotionManager: ObservableObject {
     // MARK: - Private Methods
     
     private func setupMotionQueue() {
-        motionQueue.qualityOfService = BeerConfiguration.Motion.queueQualityOfService
-        motionQueue.maxConcurrentOperationCount = BeerConfiguration.Motion.maxConcurrentOperations
+        motionQueue.qualityOfService = TeaConfiguration.Motion.queueQualityOfService
+        motionQueue.maxConcurrentOperationCount = TeaConfiguration.Motion.maxConcurrentOperations
     }
     
     private func checkMotionAvailability() {
@@ -64,7 +64,7 @@ class MotionManager: ObservableObject {
             return
         }
         
-        motionManager.deviceMotionUpdateInterval = BeerConfiguration.Motion.updateInterval
+        motionManager.deviceMotionUpdateInterval = TeaConfiguration.Motion.updateInterval
         
         motionManager.startDeviceMotionUpdates(to: motionQueue) { [weak self] motion, error in
             DispatchQueue.main.async {
